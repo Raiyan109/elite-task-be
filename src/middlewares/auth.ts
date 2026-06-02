@@ -3,11 +3,8 @@ import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../config';
 import { TUserRole } from '../modules/User/user.interface';
-import catchAsync from '../utils/catchAsync';
 import userModel from '../modules/User/user.model';
-import AdminModel from '../modules/Admin/admin.model';
 import { AdminPermissions } from '../modules/Role/role.constants';
-import { IAdminInterface } from '../modules/Admin/admin.interface';
 
 
 // export const auth = (...requiredRole: TUserRole[]) => async (req: Request, res: Response, next: NextFunction) => {
@@ -82,7 +79,7 @@ export const auth = (...requiredRole: TUserRole[]) => {
         config.jwt_access_secret as string,
       ) as JwtPayload;
 
-      const { role, user_phone, admin_phone, _id } = decoded;
+      const { role, user_phone,  _id } = decoded;
 
       let userData;
       if (role === 'user') {
@@ -99,7 +96,7 @@ export const auth = (...requiredRole: TUserRole[]) => {
       //   userData = await AdminModel.findOne({ admin_phone });
       // }
       if (role !== 'user') {
-        userData = await AdminModel.findOne({ admin_phone }).populate('admin_role_id');
+        // userData = await AdminModel.findOne({ admin_phone }).populate('admin_role_id');
       }
 
       if (!userData) {
@@ -124,7 +121,7 @@ export const auth = (...requiredRole: TUserRole[]) => {
       req.user = {
         ...decoded,
         _id: userData._id,
-        permissions: role !== 'user' ? (userData as IAdminInterface).admin_role_id : null
+        // permissions: role !== 'user' ? (userData as IAdminInterface).admin_role_id : null
       };
       next();
     } catch (error) {

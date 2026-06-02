@@ -7,7 +7,7 @@ import { auth } from '../../middlewares/auth';
 
 const router = express.Router();
 
-router.post('/send-otp-phone', UserControllers.sendPhoneOtp);
+router.post('/signup', UserControllers.signup);
 
 // router.post('/verify-otp-phone', UserControllers.verifyPhoneOtp)
 

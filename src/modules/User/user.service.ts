@@ -1,149 +1,89 @@
 import httpStatus from "http-status";
-import userModel, { IUserDocument } from "./user.model";
+import userModel from "./user.model";
 import { comparePassword, hashPassword } from "../../helpers/hashHelper";
 import AppError from "../../errors/AppError";
 import { createToken } from "../../utils/createToken";
 import config from "../../config";
-import { emailTemplate } from "../../utils/emailTemplate";
-import { emailHelper } from "../../helpers/emailHelper";
 import { IUserInterface } from "./user.interface";
-import { SendPhoneOTP } from "../../middlewares/sendPhoneOTP";
 import { JwtPayload } from "jsonwebtoken";
 import { IChangePassword } from "../../types/auth";
 import { FilterQuery } from "mongoose";
 
 
-// Send phone otp
-const sendPhoneOtpService = async (user_phone: string) => {
-  const existingUser = await userModel.findOne({ user_phone });
+// ========================
+// SIGNUP
+// ========================
+const signupService = async (payload: IUserInterface) => {
+  const { user_email, user_name, user_password } = payload;
 
-  // if (existingUser && existingUser.user_phone_is_verified) {
-  //     throw new Error("Phone number already registered");
-  // }
-
-  const otp_code = '1234';
-  // const otp_code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-  const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
-
-  if (existingUser) {
-    existingUser.otp_code = Number(otp_code);
-    existingUser.otp_expires_at = otp_expires_at;
-    SendPhoneOTP(otp_code, user_phone);
-    await existingUser.save();
-    return existingUser;
-  }
-
-  const user = await userModel.create({
-    user_phone,
-    otp_code,
-    otp_expires_at,
-    user_status: 'in-active',
-    login_type: 'phone',
-    user_phone_is_verified: false,
-    role: 'user',
+  const existingUser = await userModel.findOne({
+    $or: [{ user_email }, { user_name }],
   });
 
-  return user;
-}
-
-
-// Login user with phone number and OTP
-const loginServices = async (payload: IUserInterface): Promise<{
-  accessToken?: string;
-  user?: IUserDocument;
-  newUser?: IUserDocument;
-}> => {
-  const { user_phone, otp_code, otp_expires_at, user_password, user_email, login_type, social_id, device_id, role, google_id } = payload;
-
-  if (user_phone && otp_code) {
-    // Validate both phone and OTP are provided
-    if (!user_phone || !otp_code) {
-      throw new Error("Both phone number and OTP are required");
-    }
-
-    const user = await userModel.findOne({ user_phone, otp_code });
-
-    if (!user) {
-      throw new Error("Invalid OTP or phone number");
-    }
-
-    user.user_phone_is_verified = true;
-    user.user_status = 'active'
-    user.otp_code = undefined;
-    user.otp_expires_at = undefined;
-    await user.save();
-
-    //create token
-    const accessToken = createToken(
-      {
-        _id: user._id as string,
-        user_phone: user.user_phone,
-        role: user.role,
-      },
-      config.jwt_access_secret as string,
-      // '7d'
-    );
-
-    return { accessToken, user: user };
+  if (existingUser) {
+    throw new AppError(httpStatus.CONFLICT, "Email or username already exists");
   }
 
-  if (google_id && user_email) {
-    let user = await userModel.findOne({ google_id }) || await userModel.findOne({ user_email });
+  const hashedPassword = await hashPassword(user_password);
 
-    if (!user) {
-      user = await userModel.create({
-        user_email,
-        // user_name,
-        // user_profile,
-        google_id,
-        user_status: 'active',
-        user_phone_is_verified: false,
-      });
-    } else {
-      user.google_id = google_id;
-      // user.user_name = user_name || user.user_name;
-      // user.user_profile = user_profile || user.user_profile;
-      await user.save();
-    }
+  const user = await userModel.create({
+    user_email,
+    user_name,
+    user_password: hashedPassword,
+    user_status: "active",
+    role: "user",
+  });
 
-    const accessToken = createToken(
-      { _id: user._id as string, user_email: user.user_email, user_phone: user_phone, role: user.role },
-      config.jwt_access_secret,
-      // '7d'
-    );
-    return { accessToken, user };
+  const accessToken = createToken(
+    {
+      _id: user._id,
+      user_email: user.user_email,
+      role: user.role,
+    },
+    config.jwt_access_secret as string
+  );
+
+  return { user, accessToken };
+};
+
+// ========================
+// LOGIN
+// ========================
+const loginService = async (payload: {
+  user_email?: string;
+  user_name?: string;
+  user_password: string;
+}) => {
+  const { user_email, user_name, user_password } = payload;
+
+  const user = await userModel.findOne({
+    $or: [{ user_email }, { user_name }],
+  }).select("+user_password");
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // Facebook login
-  // if (facebook_id && user_email) {
-  //     let user = await userModel.findOne({ facebook_id }) || await userModel.findOne({ user_email });
+  const isPasswordValid = await comparePassword(
+    user_password,
+    user.user_password
+  );
 
-  //     if (!user) {
-  //       user = await userModel.create({
-  //         user_email,
-  //         user_name,
-  //         user_profile,
-  //         facebook_id,
-  //         user_status: 'active',
-  //         user_phone_is_verified: false,
-  //       });
-  //     } else {
-  //       user.facebook_id = facebook_id;
-  //       user.user_name = user_name || user.user_name;
-  //       user.user_profile = user_profile || user.user_profile;
-  //       await user.save();
-  //     }
+  if (!isPasswordValid) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
+  }
 
-  //     const accessToken = createToken(
-  //       { _id: user._id, user_email: user.user_email, role: user.role },
-  //       config.jwt_access_secret,
-  //       '7d'
-  //     );
-  //     return { accessToken, user };
-  //   }
+  const accessToken = createToken(
+    {
+      _id: user._id,
+      user_email: user.user_email,
+      role: user.role,
+    },
+    config.jwt_access_secret as string
+  );
 
-  throw new Error("Invalid login request");
-}
+  return { user, accessToken };
+};
 
 const updateUserServices = async (_id: string, payload: Partial<IUserInterface>) => {
   const userData = await userModel.findById(_id);
@@ -180,15 +120,15 @@ const forgotPasswordServices = async (user_phone: string) => {
   // }
 
   const otp_code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-  const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
+  // const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
 
-  if (existingUser) {
-    existingUser.otp_code = Number(otp_code);
-    existingUser.otp_expires_at = otp_expires_at;
-    SendPhoneOTP(otp_code, user_phone);
-    await existingUser.save();
-    return existingUser;
-  }
+  // if (existingUser) {
+  //   existingUser.otp_code = Number(otp_code);
+  //   existingUser.otp_expires_at = otp_expires_at;
+  //   SendPhoneOTP(otp_code, user_phone);
+  //   await existingUser.save();
+  //   return existingUser;
+  // }
 
   const result = await userModel.findByIdAndUpdate({ user_phone }, {
     $set: {
@@ -220,9 +160,9 @@ const resetPasswordServices = async (user_phone: string, new_password: string, c
   // }
 
   // Update user password and clear OTP
-  existingUser.user_password = await hashPassword(new_password);
-  existingUser.otp_code = undefined;
-  existingUser.otp_expires_at = undefined;
+  // existingUser.user_password = await hashPassword(new_password);
+  // existingUser.otp_code = undefined;
+  // existingUser.otp_expires_at = undefined;
   await existingUser.save();
   return existingUser;
 }
@@ -323,8 +263,8 @@ const getAllDashboardUsersService = async (searchTerm?: string) => {
 
 
 export const UserServices = {
-  loginServices,
-  sendPhoneOtpService,
+  signupService,
+  loginService,
   updateUserServices,
   forgotPasswordServices,
   resetPasswordServices,

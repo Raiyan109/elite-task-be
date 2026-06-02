@@ -5,7 +5,7 @@ export default {
   node_env: "development",
   port: 5000,
   db_url:
-    "mongodb+srv://kraiyan109:qfqBDFMqFWqPucpj@classicitdatabases.kazph.mongodb.net/Foodplus?retryWrites=true&w=majority&appName=classicITDatabases",
+    "mongodb+srv://kraiyan109:qfqBDFMqFWqPucpj@classicitdatabases.kazph.mongodb.net/elite-task?retryWrites=true&w=majority&appName=classicITDatabases",
     // "mongodb://classicit_foodplususer:yOjI3BASA6@103.240.4.56:27017/classicit_foodplusdb?replicaSet=rs0&authSource=admin",
 
   bcrypt_salt_rounds: "10",

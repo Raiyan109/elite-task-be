@@ -6,62 +6,39 @@ import { UserServices } from "./user.service";
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 
-const sendPhoneOtp = catchAsync(async (req, res) => {
-    const { user_phone } = req.body;
+// ========================
+// SIGNUP CONTROLLER
+// ========================
+const signup = catchAsync(async (req, res) => {
+  const result = await UserServices.signupService(req.body);
 
-    const { user_phone: phone, user_phone_is_verified, otp_code, otp_expires_at } = await UserServices.sendPhoneOtpService(user_phone);
-
-    const userData = {
-        user_phone: phone,
-        user_phone_is_verified,
-        otp_code,
-        otp_expires_at
-    }
-
-    res.status(httpStatus.OK).json({
-        success: true,
-        message: "OTP sent successfully",
-        data: userData,
-    });
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "User created successfully",
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+    },
+  });
 });
 
-
-// Verify phone OTP
-// const verifyPhoneOtp = catchAsync(async (req, res) => {
-//     const user = await UserServices.verifyPhoneOtpServices(req.body);
-
-//     res.status(httpStatus.OK).json({
-//         success: true,
-//         message: "Phone OTP verified successfully",
-//         data: user,
-//     });
-// });
-
-
-// Login
+// ========================
+// LOGIN CONTROLLER
+// ========================
 const login = catchAsync(async (req, res) => {
-    const { ...loginData } = req.body;
-    const { user, accessToken, newUser } = await UserServices.loginServices(loginData);
+  const result = await UserServices.loginService(req.body);
 
-    res.status(httpStatus.OK).json({
-        success: true,
-        message: "User logged in successfully",
-        data: user || newUser,
-        accessToken: accessToken,
-    });
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "User logged in successfully",
+    data: {
+      user: result.user,
+      accessToken: result.accessToken,
+    },
+  });
 });
-
-// const socialLogin = catchAsync(async (req, res) => {
-//     const { ...loginData } = req.body;
-//     const result = await UserServices.socialLoginServices(loginData);
-
-//     sendResponse(res, {
-//         success: true,
-//         statusCode: httpStatus.OK,
-//         message: 'User login successfully',
-//         data: result,
-//     });
-// });
 
 const updateUser = catchAsync(async (req, res) => {
     const user_id = req.user?._id;
@@ -104,11 +81,11 @@ const forgotPassword = catchAsync(async (req, res) => {
     if (!result) {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found!');
     }
-    const { otp_code } = result;
+    // const { otp_code } = result;
 
     const userData = {
         user_phone,
-        otp_code,
+        // otp_code,
     }
 
 
@@ -189,7 +166,7 @@ const getAllDashboardUsers = catchAsync(
 );
 
 export const UserControllers = {
-    sendPhoneOtp,
+    signup,
     login,
     updateUser,
     forgotPassword,
