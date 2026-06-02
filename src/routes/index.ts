@@ -2,9 +2,6 @@ import { Router } from 'express';
 import { UserRoutes } from '../modules/User/user.route';
 import { RoleRoutes } from '../modules/Role/role.route';
 
-
-
-
 const router = Router();
 
 const moduleRoutes = [
