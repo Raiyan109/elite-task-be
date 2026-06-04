@@ -79,7 +79,7 @@ export const auth = (...requiredRole: TUserRole[]) => {
         config.jwt_access_secret as string,
       ) as JwtPayload;
 
-      const { role, user_phone,  _id } = decoded;
+      const { role, user_phone, _id } = decoded;
 
       let userData;
       if (role === 'user') {
@@ -135,10 +135,13 @@ export const checkAdminPermission = (requiredPermission: AdminPermissions): Requ
   return (req, res, next) => {
     try {
       // For non-admin routes, just proceed
-      if (req.user?.role === 'user') {
-        next();
-        return;
-      }
+      // if (req.user?.role === 'user') {
+      //   next();
+      //   return;
+      // }
+      // if (!req.user.roleId) {
+      //   return res.status(403).json({ message: "Role not assigned" });
+      // }
 
       const permissions = req.user.permissions?.toObject?.() || req.user.permissions || {};
 

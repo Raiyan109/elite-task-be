@@ -5,7 +5,7 @@ export interface IUserInterface {
     user_password: string;
     confirm_password?: string;
 
-    role?: "user" | "admin";
+    roleId: string;
     user_status?: "active" | "in-active";
 }
 

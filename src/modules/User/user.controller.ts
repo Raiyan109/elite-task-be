@@ -124,17 +124,6 @@ const changePassword = catchAsync(async (req, res) => {
     });
 });
 
-const deleteUserOwnAccount = catchAsync(async (req, res) => {
-    const userId = req.user._id;
-    const { delete_confirmation } = req.body;
-    await UserServices.deleteUserOwnAccountServices(userId, delete_confirmation);
-
-    sendResponse(res, {
-        success: true,
-        statusCode: httpStatus.OK,
-        message: 'Account scheduled for deletion in 30 days.',
-    });
-});
 
 const getUserById = catchAsync(async (req, res) => {
     const user = req.user;
@@ -173,7 +162,6 @@ export const UserControllers = {
     forgotPassword,
     resetPassword,
     changePassword,
-    deleteUserOwnAccount,
     getUserById,
     getAllDashboardUsers
 };  

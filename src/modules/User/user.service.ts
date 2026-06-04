@@ -38,7 +38,7 @@ const signupService = async (payload: IUserInterface) => {
     {
       _id: user._id,
       user_email: user.user_email,
-      role: user.role,
+      roleId: user.roleId,
     },
     config.jwt_access_secret as string
   );
@@ -77,7 +77,7 @@ const loginService = async (payload: {
     {
       _id: user._id,
       user_email: user.user_email,
-      role: user.role,
+      roleId: user.roleId,
     },
     config.jwt_access_secret as string
   );
@@ -207,21 +207,6 @@ const changePasswordServices = async (user: JwtPayload, payload: IChangePassword
   return result;
 }
 
-// User delete own account
-const deleteUserOwnAccountServices = async (userId: string, delete_confirmation: string) => {
-  if (delete_confirmation !== "DELETE") {
-    throw new AppError(httpStatus.BAD_REQUEST, "Please provide 'delete' to confirm account deletion.");
-  }
-  const user = await userModel.findById(userId);
-
-  if (!user) throw new AppError(
-    httpStatus.NOT_FOUND,
-    "User not found"
-  );
-
-  user.scheduledForDeletionAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-  await user.save();
-}
 
 // logged in User info
 const getUserByIdServices = async (user_phone_or_email: string) => {
@@ -269,7 +254,6 @@ export const UserServices = {
   forgotPasswordServices,
   resetPasswordServices,
   changePasswordServices,
-  deleteUserOwnAccountServices,
   getUserByIdServices,
   getAllDashboardUsersService
 };  

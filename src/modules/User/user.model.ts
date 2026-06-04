@@ -7,7 +7,7 @@ export interface IUserDocument extends Document {
     user_password: string;
     confirm_password?: string;
 
-    role?: "user" | "admin";
+    roleId: string;
     user_status?: "active" | "in-active";
 }
 
@@ -17,12 +17,9 @@ const UserSchema: Schema = new Schema<IUserDocument>(
         user_email: { type: String },
         user_password: { type: String },
         confirm_password: { type: String },
-        
-        role: {
-            type: String,
-            enum: ["user", "admin"],
-            default: "user"
-        },
+
+        roleId: { type: String, ref: "roles" },
+        user_status: { type: String, enum: ["active", "in-active"], default: "active" },
     },
     {
         timestamps: true,

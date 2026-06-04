@@ -24,10 +24,6 @@ router.post('/change-password',
     auth('user'),
     UserControllers.changePassword);
 
-router.post('/delete-account',
-    auth('user'),
-    UserControllers.deleteUserOwnAccount);
-
 //get logged in user info
 router.get("/profile", auth('user'), UserControllers.getUserById)
 
