@@ -1,328 +1,52 @@
-import mongoose, { Schema } from 'mongoose';
-import { IRole } from './role.interface';
+import mongoose from "mongoose";
+import { IRole } from "./role.interface";
 
 const RoleSchema = new mongoose.Schema<IRole>(
   {
-    admin_role: {
+    name: {
       type: String,
       required: true,
+      enum: ["admin", "project_manager", "team_member"],
     },
 
-    // Product permissions
-    is_product_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_product_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_product_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_product_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
+    description: {
+      type: String,
     },
 
-    // Category permissions
-    is_category_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_category_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_category_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_category_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
+    permissions: {
+      project: {
+        create: { type: Boolean, default: false },
+        read: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+      },
 
-    // Subcategory permissions
-    is_subcategory_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_subcategory_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_subcategory_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_subcategory_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
+      task: {
+        create: { type: Boolean, default: false },
+        read: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+        assign: { type: Boolean, default: false },
+        status_change: { type: Boolean, default: false },
+      },
 
-    // Childcategory permissions
-    is_childcategory_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_childcategory_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_childcategory_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_childcategory_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
+      team: {
+        add_member: { type: Boolean, default: false },
+        view_members: { type: Boolean, default: false },
+      },
 
-    // Staff permissions
-    is_staff_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_staff_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_staff_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_staff_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
+      dashboard: {
+        view: { type: Boolean, default: false },
+      },
 
-    // Role permissions
-    is_role_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_role_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_role_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_role_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Banner permissions
-    is_banner_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_banner_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_banner_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_banner_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Custom order permissions
-    is_customOrder_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    // is_customOrder_create: {
-    //   type: Boolean,
-    //   //required: true,
-    //   //default: false
-    // },
-    is_customOrder_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    // is_customOrder_delete: {
-    //   type: Boolean,
-    //   //required: true,
-    //   //default: false
-    // },
-
-    // Question permissions
-    is_question_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_question_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_question_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_question_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Offers permissions
-    is_offers_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_offers_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_offers_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_offers_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Combo permissions
-    is_combo_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_combo_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_combo_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_combo_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Coupon permissions
-    is_coupon_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_coupon_create: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_coupon_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_coupon_delete: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Settings permissions
-    is_settings_view: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-    is_settings_update: {
-      type: Boolean,
-      //required: true,
-      //default: false
-    },
-
-    // Dashboard permission
-    dashboard_permission: {
-      type: Boolean,
-      //required: false
-    },
-
-    is_ytLink_view: {
-      type: Boolean,
-      //required: false
-    },
-    is_ytLink_create: {
-      type: Boolean,
-      //required: false
-    },
-    is_ytLink_update: {
-      type: Boolean,
-      //required: false
-    },
-    is_ytLink_delete: {
-      type: Boolean,
-      //required: false
-    },
-
-    is_hotDeal_view: Boolean,
-    is_hotDeal_create: Boolean,
-    is_hotDeal_update: Boolean,
-    is_hotDeal_delete: Boolean,
-
-    is_order_view: Boolean,
-    is_order_update: Boolean,
-
-    is_refund_view: {
-      type: Boolean,
-      //required: false
+      activity_log: {
+        view: { type: Boolean, default: false },
+      },
     },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
-export const RoleModel = mongoose.model<IRole>('roles', RoleSchema);
+export const RoleModel = mongoose.model<IRole>("roles", RoleSchema);
