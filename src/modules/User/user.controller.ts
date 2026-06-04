@@ -11,6 +11,7 @@ import AppError from "../../errors/AppError";
 // ========================
 const signup = catchAsync(async (req, res) => {
   const result = await UserServices.signupService(req.body);
+  console.log("req.body", req.body);
 
   sendResponse(res, {
     success: true,

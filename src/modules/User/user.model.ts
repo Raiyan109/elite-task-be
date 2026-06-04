@@ -5,12 +5,10 @@ export interface IUserDocument extends Document {
     user_name: string;
     user_email: string;
     user_password: string;
-    confirm_password: string;
+    confirm_password?: string;
 
     role?: "user" | "admin";
     user_status?: "active" | "in-active";
-
-    scheduledForDeletionAt?: Date | null;
 }
 
 const UserSchema: Schema = new Schema<IUserDocument>(
@@ -24,10 +22,6 @@ const UserSchema: Schema = new Schema<IUserDocument>(
             type: String,
             enum: ["user", "admin"],
             default: "user"
-        },
-        scheduledForDeletionAt: {
-            type: Date,
-            default: null,
         },
     },
     {
