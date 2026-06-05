@@ -7,8 +7,9 @@ import config from "../../config";
 import { IUserInterface } from "./user.interface";
 import { JwtPayload } from "jsonwebtoken";
 import { IChangePassword } from "../../types/auth";
-import { FilterQuery } from "mongoose";
+import { FilterQuery, ObjectId } from "mongoose";
 import { RoleModel } from "../Role/role.model";
+import { IRole } from "../Role/role.interface";
 
 
 // ========================
@@ -46,7 +47,7 @@ const signupService = async (payload: IUserInterface) => {
     {
       _id: user._id,
       user_email: user.user_email,
-      roleId: user.roleId,
+      roleId: user.roleId as ObjectId | IRole | undefined,
     },
     config.jwt_access_secret as string
   );
@@ -85,7 +86,7 @@ const loginService = async (payload: {
     {
       _id: user._id,
       user_email: user.user_email,
-      roleId: user.roleId,
+      roleId: user.roleId as ObjectId | IRole | undefined,
     },
     config.jwt_access_secret as string
   );

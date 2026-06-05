@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongoose';
+import { IRole } from '../modules/Role/role.interface';
 
 export const createToken = (
-    jwtPayload: { _id?: string; user_phone?: string; user_email?: string; admin_phone?: string; admin_status?: "active" | "in-active"; role?: string; },
+    jwtPayload: { _id?: string; user_phone?: string; user_email?: string; roleId?: ObjectId | IRole | undefined; },
     secret: string,
     // expiresIn: string | number,
     //expiresIn: SignOptions['expiresIn']

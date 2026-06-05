@@ -11,6 +11,6 @@ export interface IUserInterface {
     user_status?: "active" | "in-active";
 }
 
-export type TUserRole = "user" | "admin";
+export type TUserRole = "project_manager" | "admin" | "team_member";
 export type TUserStatus = "active" | "in-active";
 

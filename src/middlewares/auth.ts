@@ -2,9 +2,9 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../config';
-import { TUserRole } from '../modules/User/user.interface';
 import userModel from '../modules/User/user.model';
 import { AdminPermissions } from '../modules/Role/role.constants';
+import { RoleModel } from '../modules/Role/role.model';
 
 
 // export const auth = (...requiredRole: TUserRole[]) => async (req: Request, res: Response, next: NextFunction) => {
@@ -61,68 +61,128 @@ import { AdminPermissions } from '../modules/Role/role.constants';
 // };
 
 
-export const auth = (...requiredRole: TUserRole[]) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// export const auth = (...requiredRole: TUserRole[]) => {
+//   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//     try {
+//       const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+//       if (!token) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+
+//       const decoded = jwt.verify(
+//         token,
+//         config.jwt_access_secret as string,
+//       ) as JwtPayload;
+
+//       const { role, user_phone, _id } = decoded;
+
+//       let userData;
+//       if (role === 'user') {
+//         userData = await userModel.findOne({
+//           _id,
+//           $or: [
+//             { user_phone: user_phone ?? null },
+//             { user_email: decoded.user_email ?? null },
+//           ],
+//         });
+//       }
+
+//       // if (role === 'admin') {
+//       //   userData = await AdminModel.findOne({ admin_phone });
+//       // }
+//       if (role !== 'user') {
+//         // userData = await AdminModel.findOne({ admin_phone }).populate('admin_role_id');
+//       }
+
+//       if (!userData) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+
+//       if (requiredRole && !requiredRole.includes(role)) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+
+//       // req.user = decoded;
+//       req.user = {
+//         ...decoded,
+//         _id: userData._id,
+//         // permissions: role !== 'user' ? (userData as IAdminInterface).admin_role_id : null
+//       };
+//       next();
+//     } catch (error) {
+//       next(error);
+//     }
+//   };
+// };
+
+export const auth = (...requiredRoles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+      const token =
+        req.headers.authorization?.split(" ")[1] || req.cookies?.token;
+
       if (!token) {
-        res.status(httpStatus.UNAUTHORIZED).json({
+         res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
-          statusCode: 401,
-          message: 'You have no access to this route',
+          message: "No token provided",
         });
-        return;
       }
 
       const decoded = jwt.verify(
         token,
-        config.jwt_access_secret as string,
+        config.jwt_access_secret as string
       ) as JwtPayload;
 
-      const { role, user_phone, _id } = decoded;
+      // ✅ STEP 1: get user from DB
+      const user = await userModel.findById(decoded._id);
 
-      let userData;
-      if (role === 'user') {
-        userData = await userModel.findOne({
-          _id,
-          $or: [
-            { user_phone: user_phone ?? null },
-            { user_email: decoded.user_email ?? null },
-          ],
-        });
-      }
-
-      // if (role === 'admin') {
-      //   userData = await AdminModel.findOne({ admin_phone });
-      // }
-      if (role !== 'user') {
-        // userData = await AdminModel.findOne({ admin_phone }).populate('admin_role_id');
-      }
-
-      if (!userData) {
-        res.status(httpStatus.UNAUTHORIZED).json({
+      if (!user) {
+         res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
-          statusCode: 401,
-          message: 'You have no access to this route',
+          message: "User not found",
         });
-        return;
       }
 
-      if (requiredRole && !requiredRole.includes(role)) {
-        res.status(httpStatus.UNAUTHORIZED).json({
+      // ✅ STEP 2: get role with permissions
+      const role = await RoleModel.findById(user.roleId);
+
+      if (!role) {
+         res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
-          statusCode: 401,
-          message: 'You have no access to this route',
+          message: "Role not found",
         });
-        return;
       }
 
-      // req.user = decoded;
+      // ❌ OPTIONAL: keep role name check (simple RBAC)
+      if (requiredRoles.length > 0 && !requiredRoles.includes(role.name)) {
+         res.status(httpStatus.FORBIDDEN).json({
+          success: false,
+          message: "You have no access to this route",
+        });
+      }
+
+      // ✅ ATTACH FULL USER CONTEXT
       req.user = {
-        ...decoded,
-        _id: userData._id,
-        // permissions: role !== 'user' ? (userData as IAdminInterface).admin_role_id : null
+        ...user.toObject(),
+        role: role.name,
+        permissions: role.permissions,
       };
+
       next();
     } catch (error) {
       next(error);
