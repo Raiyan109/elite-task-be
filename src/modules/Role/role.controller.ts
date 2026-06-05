@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RequestHandler } from "express";
 import { RoleServices } from "./role.service";
 import sendResponse from "../../utils/sendResponse";
@@ -7,8 +8,7 @@ import AppError from "../../errors/AppError";
 
 const postRole: RequestHandler = async (
     req,
-    res,
-    next
+    res
 ): Promise<void> => {
     const result = await RoleServices.postRoleService(req.body);
 
@@ -62,9 +62,9 @@ const updateRole: RequestHandler = async (
     }
 };
 
-const deleteRole = catchAsync(async (req, res, next) => {
+const deleteRole = catchAsync(async (req, res) => {
     const _id = req?.body?._id
-    const result = await RoleServices.deleteRoleService(_id);
+    await RoleServices.deleteRoleService(_id);
 
     return sendResponse(res, {
         statusCode: httpStatus.OK,

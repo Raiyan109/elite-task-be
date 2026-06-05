@@ -1,4 +1,3 @@
-import { log } from "console";
 import { FileUploadHelper } from "../../helpers/FileUploadHelper";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
@@ -114,7 +113,6 @@ const resetPassword = catchAsync(async (req, res) => {
 const changePassword = catchAsync(async (req, res) => {
     const user = req.user;
     const { ...passwordData } = req.body;
-    log("Change Password Controller", passwordData, user);
     await UserServices.changePasswordServices(user, passwordData);
 
     sendResponse(res, {

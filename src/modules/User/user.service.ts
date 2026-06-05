@@ -8,6 +8,7 @@ import { IUserInterface } from "./user.interface";
 import { JwtPayload } from "jsonwebtoken";
 import { IChangePassword } from "../../types/auth";
 import { FilterQuery } from "mongoose";
+import { RoleModel } from "../Role/role.model";
 
 
 // ========================
@@ -26,12 +27,19 @@ const signupService = async (payload: IUserInterface) => {
 
   const hashedPassword = await hashPassword(user_password);
 
+  // 👇 default role
+  const defaultRole = await RoleModel.findOne({ name: "team_member" });
+
+  if (!defaultRole) {
+    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, "Default role not found");
+  }
+
   const user = await userModel.create({
     user_email,
     user_name,
     user_password: hashedPassword,
     user_status: "active",
-    role: "user",
+    roleId: defaultRole._id,
   });
 
   const accessToken = createToken(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import QueryBuilder from "../../builder/QueryBuilder";
 import AppError from "../../errors/AppError";
 import { IRole } from "./role.interface";
@@ -9,12 +10,12 @@ const postRoleService = async (
     payload: IRole
 ): Promise<IRole> => {
 
-    const existingRoles = await RoleModel.findOne({ admin_role: payload.admin_role });
+    // const existingRoles = await RoleModel.findOne({ admin_role: payload.admin_role });
 
 
-    if (existingRoles) {
-        throw new AppError(httpStatus.BAD_REQUEST, 'You already added this role!');
-    }
+    // if (existingRoles) {
+    //     throw new AppError(httpStatus.BAD_REQUEST, 'You already added this role!');
+    // }
 
     const result = await RoleModel.create(payload);
     return result;
@@ -46,7 +47,7 @@ const updateRoleService = async (
     const unsetFields: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(payload)) {
-        if (value === false) {
+        if (value === null || value === undefined) {
             unsetFields[key] = "";
         } else {
             setFields[key] = value;

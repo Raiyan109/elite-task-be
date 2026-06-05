@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+import { IRole } from "../Role/role.interface";
 
 export interface IUserInterface {
     user_name: string;
@@ -5,7 +7,7 @@ export interface IUserInterface {
     user_password: string;
     confirm_password?: string;
 
-    roleId: string;
+    roleId: Types.ObjectId | IRole;
     user_status?: "active" | "in-active";
 }
 
