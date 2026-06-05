@@ -24,58 +24,43 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserControllers = void 0;
-const console_1 = require("console");
 const FileUploadHelper_1 = require("../../helpers/FileUploadHelper");
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const user_service_1 = require("./user.service");
 const http_status_1 = __importDefault(require("http-status"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
-const sendPhoneOtp = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { user_phone } = req.body;
-    const { user_phone: phone, user_phone_is_verified, otp_code, otp_expires_at } = yield user_service_1.UserServices.sendPhoneOtpService(user_phone);
-    const userData = {
-        user_phone: phone,
-        user_phone_is_verified,
-        otp_code,
-        otp_expires_at
-    };
-    res.status(http_status_1.default.OK).json({
+// ========================
+// SIGNUP CONTROLLER
+// ========================
+const signup = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.UserServices.signupService(req.body);
+    console.log("req.body", req.body);
+    (0, sendResponse_1.default)(res, {
         success: true,
-        message: "OTP sent successfully",
-        data: userData,
+        statusCode: http_status_1.default.CREATED,
+        message: "User created successfully",
+        data: {
+            user: result.user,
+            accessToken: result.accessToken,
+        },
     });
 }));
-// Verify phone OTP
-// const verifyPhoneOtp = catchAsync(async (req, res) => {
-//     const user = await UserServices.verifyPhoneOtpServices(req.body);
-//     res.status(httpStatus.OK).json({
-//         success: true,
-//         message: "Phone OTP verified successfully",
-//         data: user,
-//     });
-// });
-// Login
+// ========================
+// LOGIN CONTROLLER
+// ========================
 const login = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const loginData = __rest(req.body, []);
-    const { user, accessToken, newUser } = yield user_service_1.UserServices.loginServices(loginData);
-    res.status(http_status_1.default.OK).json({
+    const result = yield user_service_1.UserServices.loginService(req.body);
+    (0, sendResponse_1.default)(res, {
         success: true,
+        statusCode: http_status_1.default.OK,
         message: "User logged in successfully",
-        data: user || newUser,
-        accessToken: accessToken,
+        data: {
+            user: result.user,
+            accessToken: result.accessToken,
+        },
     });
 }));
-// const socialLogin = catchAsync(async (req, res) => {
-//     const { ...loginData } = req.body;
-//     const result = await UserServices.socialLoginServices(loginData);
-//     sendResponse(res, {
-//         success: true,
-//         statusCode: httpStatus.OK,
-//         message: 'User login successfully',
-//         data: result,
-//     });
-// });
 const updateUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const user_id = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
@@ -108,10 +93,10 @@ const forgotPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
     if (!result) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, 'User not found!');
     }
-    const { otp_code } = result;
+    // const { otp_code } = result;
     const userData = {
         user_phone,
-        otp_code,
+        // otp_code,
     };
     (0, sendResponse_1.default)(res, {
         success: true,
@@ -133,22 +118,11 @@ const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
 const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
     const passwordData = __rest(req.body, []);
-    (0, console_1.log)("Change Password Controller", passwordData, user);
     yield user_service_1.UserServices.changePasswordServices(user, passwordData);
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,
         message: 'Password changed successfully',
-    });
-}));
-const deleteUserOwnAccount = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = req.user._id;
-    const { delete_confirmation } = req.body;
-    yield user_service_1.UserServices.deleteUserOwnAccountServices(userId, delete_confirmation);
-    (0, sendResponse_1.default)(res, {
-        success: true,
-        statusCode: http_status_1.default.OK,
-        message: 'Account scheduled for deletion in 30 days.',
     });
 }));
 const getUserById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -162,13 +136,23 @@ const getUserById = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
         data: result,
     });
 }));
+const getAllDashboardUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { searchTerm } = req.query;
+    const users = yield user_service_1.UserServices.getAllDashboardUsersService(searchTerm);
+    (0, sendResponse_1.default)(res, {
+        statusCode: 200,
+        success: true,
+        message: "Dashboard users fetched successfully",
+        data: users,
+    });
+}));
 exports.UserControllers = {
-    sendPhoneOtp,
+    signup,
     login,
     updateUser,
     forgotPassword,
     resetPassword,
     changePassword,
-    deleteUserOwnAccount,
-    getUserById
+    getUserById,
+    getAllDashboardUsers
 };

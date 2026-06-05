@@ -17,7 +17,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = __importDefault(require("../config"));
 const user_model_1 = __importDefault(require("../modules/User/user.model"));
-const admin_model_1 = __importDefault(require("../modules/Admin/admin.model"));
+const role_model_1 = require("../modules/Role/role.model");
 // export const auth = (...requiredRole: TUserRole[]) => async (req: Request, res: Response, next: NextFunction) => {
 //     try {
 //         const token = req.headers.authorization?.split(' ')[1];
@@ -61,55 +61,104 @@ const admin_model_1 = __importDefault(require("../modules/Admin/admin.model"));
 //         next(error);
 //     }
 // };
-const auth = (...requiredRole) => {
+// export const auth = (...requiredRole: TUserRole[]) => {
+//   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//     try {
+//       const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+//       if (!token) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+//       const decoded = jwt.verify(
+//         token,
+//         config.jwt_access_secret as string,
+//       ) as JwtPayload;
+//       const { role, user_phone, _id } = decoded;
+//       let userData;
+//       if (role === 'user') {
+//         userData = await userModel.findOne({
+//           _id,
+//           $or: [
+//             { user_phone: user_phone ?? null },
+//             { user_email: decoded.user_email ?? null },
+//           ],
+//         });
+//       }
+//       // if (role === 'admin') {
+//       //   userData = await AdminModel.findOne({ admin_phone });
+//       // }
+//       if (role !== 'user') {
+//         // userData = await AdminModel.findOne({ admin_phone }).populate('admin_role_id');
+//       }
+//       if (!userData) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+//       if (requiredRole && !requiredRole.includes(role)) {
+//         res.status(httpStatus.UNAUTHORIZED).json({
+//           success: false,
+//           statusCode: 401,
+//           message: 'You have no access to this route',
+//         });
+//         return;
+//       }
+//       // req.user = decoded;
+//       req.user = {
+//         ...decoded,
+//         _id: userData._id,
+//         // permissions: role !== 'user' ? (userData as IAdminInterface).admin_role_id : null
+//       };
+//       next();
+//     } catch (error) {
+//       next(error);
+//     }
+//   };
+// };
+const auth = (...requiredRoles) => {
     return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c;
+        var _a, _b;
         try {
-            const token = ((_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(' ')[1]) || ((_b = req.cookies) === null || _b === void 0 ? void 0 : _b.token);
+            const token = ((_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1]) || ((_b = req.cookies) === null || _b === void 0 ? void 0 : _b.token);
             if (!token) {
                 res.status(http_status_1.default.UNAUTHORIZED).json({
                     success: false,
-                    statusCode: 401,
-                    message: 'You have no access to this route',
+                    message: "No token provided",
                 });
-                return;
             }
             const decoded = jsonwebtoken_1.default.verify(token, config_1.default.jwt_access_secret);
-            const { role, user_phone, admin_phone, _id } = decoded;
-            let userData;
-            if (role === 'user') {
-                userData = yield user_model_1.default.findOne({
-                    _id,
-                    $or: [
-                        { user_phone: user_phone !== null && user_phone !== void 0 ? user_phone : null },
-                        { user_email: (_c = decoded.user_email) !== null && _c !== void 0 ? _c : null },
-                    ],
-                });
-            }
-            // if (role === 'admin') {
-            //   userData = await AdminModel.findOne({ admin_phone });
-            // }
-            if (role !== 'user') {
-                userData = yield admin_model_1.default.findOne({ admin_phone }).populate('admin_role_id');
-            }
-            if (!userData) {
+            // ✅ STEP 1: get user from DB
+            const user = yield user_model_1.default.findById(decoded._id);
+            if (!user) {
                 res.status(http_status_1.default.UNAUTHORIZED).json({
                     success: false,
-                    statusCode: 401,
-                    message: 'You have no access to this route',
+                    message: "User not found",
                 });
-                return;
             }
-            if (requiredRole && !requiredRole.includes(role)) {
+            // ✅ STEP 2: get role with permissions
+            const role = yield role_model_1.RoleModel.findById(user === null || user === void 0 ? void 0 : user.roleId);
+            if (!role) {
                 res.status(http_status_1.default.UNAUTHORIZED).json({
                     success: false,
-                    statusCode: 401,
-                    message: 'You have no access to this route',
+                    message: "Role not found",
                 });
-                return;
             }
-            // req.user = decoded;
-            req.user = Object.assign(Object.assign({}, decoded), { _id: userData._id, permissions: role !== 'user' ? userData.admin_role_id : null });
+            // ❌ OPTIONAL: keep role name check (simple RBAC)
+            if (requiredRoles.length > 0 && (role === null || role === void 0 ? void 0 : role.name) && !requiredRoles.includes(role.name)) {
+                res.status(http_status_1.default.FORBIDDEN).json({
+                    success: false,
+                    message: "You have no access to this route",
+                });
+            }
+            // ✅ ATTACH FULL USER CONTEXT
+            req.user = Object.assign(Object.assign({}, ((user === null || user === void 0 ? void 0 : user.toObject()) || {})), { role: role === null || role === void 0 ? void 0 : role.name, permissions: role === null || role === void 0 ? void 0 : role.permissions });
             next();
         }
         catch (error) {
@@ -121,14 +170,17 @@ exports.auth = auth;
 // Middleware to check specific admin permissions
 const checkAdminPermission = (requiredPermission) => {
     return (req, res, next) => {
-        var _a, _b, _c;
+        var _a, _b;
         try {
             // For non-admin routes, just proceed
-            if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) === 'user') {
-                next();
-                return;
-            }
-            const permissions = ((_c = (_b = req.user.permissions) === null || _b === void 0 ? void 0 : _b.toObject) === null || _c === void 0 ? void 0 : _c.call(_b)) || req.user.permissions || {};
+            // if (req.user?.role === 'user') {
+            //   next();
+            //   return;
+            // }
+            // if (!req.user.roleId) {
+            //   return res.status(403).json({ message: "Role not assigned" });
+            // }
+            const permissions = ((_b = (_a = req.user.permissions) === null || _a === void 0 ? void 0 : _a.toObject) === null || _b === void 0 ? void 0 : _b.call(_a)) || req.user.permissions || {};
             // console.log(permissions, 'permissions');
             // console.log(permissions[requiredPermission], 'permissions[requiredPermission]');
             // console.log(requiredPermission, 'requiredPermission');

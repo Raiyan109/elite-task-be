@@ -33,15 +33,40 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProjectModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    user_name: { type: String },
-    user_email: { type: String },
-    user_password: { type: String },
-    confirm_password: { type: String },
-    roleId: { type: mongoose_1.Types.ObjectId, ref: "roles" },
-    user_status: { type: String, enum: ["active", "in-active"], default: "active" },
+const ProjectSchema = new mongoose_1.default.Schema({
+    project_name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    project_description: {
+        type: String,
+        default: "",
+    },
+    project_deadline: {
+        type: Date,
+        required: true,
+    },
+    project_status: {
+        type: String,
+        enum: ["active", "completed", "on_hold"],
+        default: "active",
+        required: true,
+    },
+    user_id: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "users",
+        required: true,
+    },
+    members: [
+        {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: "users",
+        },
+    ],
 }, {
     timestamps: true,
 });
-exports.default = mongoose_1.default.model("users", UserSchema);
+exports.ProjectModel = mongoose_1.default.model("projects", ProjectSchema);

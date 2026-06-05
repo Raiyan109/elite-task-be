@@ -33,15 +33,52 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaskModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    user_name: { type: String },
-    user_email: { type: String },
-    user_password: { type: String },
-    confirm_password: { type: String },
-    roleId: { type: mongoose_1.Types.ObjectId, ref: "roles" },
-    user_status: { type: String, enum: ["active", "in-active"], default: "active" },
+const TaskSchema = new mongoose_1.default.Schema({
+    task_title: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    task_description: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    project_id: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "projects",
+        required: true,
+    },
+    user_id: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "users",
+        required: true,
+    },
+    assignedMembers: [
+        {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: "users",
+        },
+    ],
+    task_dueDate: {
+        type: Date,
+        required: true,
+    },
+    task_priority: {
+        type: String,
+        enum: ["high", "medium", "low"],
+        default: "medium",
+        required: true,
+    },
+    task_status: {
+        type: String,
+        enum: ["todo", "in_progress", "completed"],
+        default: "todo",
+        required: true,
+    },
 }, {
     timestamps: true,
 });
-exports.default = mongoose_1.default.model("users", UserSchema);
+exports.TaskModel = mongoose_1.default.model("tasks", TaskSchema);

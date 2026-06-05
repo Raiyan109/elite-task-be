@@ -14,19 +14,9 @@ app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 const corsOptions = {
     origin: [
-        "http://192.168.0.169:3000",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:3001",
-        "http://192.168.0.232:5173",
-        "http://192.168.0.231:5173",
-        "https://foodplus.classicecommerce.com",
-        "https://foodplusadmin.classicecommerce.com",
-        "http://192.168.0.137:5173",
-        "http://192.168.0.137:3000",
-        "http://192.168.0.136:3000",
-        "http://192.168.0.232:3000",
-        "http://192.168.0.231:3000"
     ], // Allow only this origin
     credentials: true, // Allow credentials
 };
@@ -37,7 +27,7 @@ app.use(express_1.default.static('uploads'));
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use('/api/v1', routes_1.default);
 app.get('/', (req, res) => {
-    res.send('Foodplus Backend');
+    res.send('Elite Task Backend');
 });
 app.use(globalErrorhandler_1.default);
 //not found route

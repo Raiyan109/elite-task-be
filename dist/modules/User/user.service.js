@@ -19,106 +19,75 @@ const hashHelper_1 = require("../../helpers/hashHelper");
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const createToken_1 = require("../../utils/createToken");
 const config_1 = __importDefault(require("../../config"));
-const sendPhoneOTP_1 = require("../../middlewares/sendPhoneOTP");
-// Send phone otp
-const sendPhoneOtpService = (user_phone) => __awaiter(void 0, void 0, void 0, function* () {
-    const existingUser = yield user_model_1.default.findOne({ user_phone });
-    // if (existingUser && existingUser.user_phone_is_verified) {
-    //     throw new Error("Phone number already registered");
-    // }
-    const otp_code = '1234';
-    // const otp_code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-    const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
+const role_model_1 = require("../Role/role.model");
+// ========================
+// SIGNUP
+// ========================
+const signupService = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const { user_email, user_name, user_password } = payload;
+    const existingUser = yield user_model_1.default.findOne({
+        $or: [{ user_email }, { user_name }],
+    });
     if (existingUser) {
-        existingUser.otp_code = Number(otp_code);
-        existingUser.otp_expires_at = otp_expires_at;
-        (0, sendPhoneOTP_1.SendPhoneOTP)(otp_code, user_phone);
-        yield existingUser.save();
-        return existingUser;
+        throw new AppError_1.default(http_status_1.default.CONFLICT, "Email or username already exists");
+    }
+    const hashedPassword = yield (0, hashHelper_1.hashPassword)(user_password);
+    // 👇 default role
+    const defaultRole = yield role_model_1.RoleModel.findOne({ name: "team_member" });
+    if (!defaultRole) {
+        throw new AppError_1.default(http_status_1.default.INTERNAL_SERVER_ERROR, "Default role not found");
     }
     const user = yield user_model_1.default.create({
-        user_phone,
-        otp_code,
-        otp_expires_at,
-        user_status: 'in-active',
-        login_type: 'phone',
-        user_phone_is_verified: false,
-        role: 'user',
+        user_email,
+        user_name,
+        user_password: hashedPassword,
+        user_status: "active",
+        roleId: defaultRole._id,
     });
-    return user;
+    // const accessToken = createToken(
+    //   {
+    //     _id: user._id,
+    //     user_email: user.user_email,
+    //     roleId: user.roleId as ObjectId | IRole | undefined,
+    //   },
+    //   config.jwt_access_secret as string
+    // );
+    const accessToken = (0, createToken_1.createToken)({
+        _id: String(user._id),
+        user_email: user.user_email,
+        roleId: defaultRole._id.toString(), // ✅ FIX HERE
+    }, config_1.default.jwt_access_secret);
+    return { user, accessToken };
 });
-// Login user with phone number and OTP
-const loginServices = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const { user_phone, otp_code, otp_expires_at, user_password, user_email, login_type, social_id, device_id, role, google_id } = payload;
-    if (user_phone && otp_code) {
-        // Validate both phone and OTP are provided
-        if (!user_phone || !otp_code) {
-            throw new Error("Both phone number and OTP are required");
-        }
-        const user = yield user_model_1.default.findOne({ user_phone, otp_code });
-        if (!user) {
-            throw new Error("Invalid OTP or phone number");
-        }
-        user.user_phone_is_verified = true;
-        user.user_status = 'active';
-        user.otp_code = undefined;
-        user.otp_expires_at = undefined;
-        yield user.save();
-        //create token
-        const accessToken = (0, createToken_1.createToken)({
-            _id: user._id,
-            user_phone: user.user_phone,
-            role: user.role,
-        }, config_1.default.jwt_access_secret);
-        return { accessToken, user: user };
+// ========================
+// LOGIN
+// ========================
+const loginService = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const { user_email, user_name, user_password } = payload;
+    const user = yield user_model_1.default.findOne({
+        $or: [{ user_email }, { user_name }],
+    }).select("+user_password");
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
-    if (google_id && user_email) {
-        let user = (yield user_model_1.default.findOne({ google_id })) || (yield user_model_1.default.findOne({ user_email }));
-        if (!user) {
-            user = yield user_model_1.default.create({
-                user_email,
-                // user_name,
-                // user_profile,
-                google_id,
-                user_status: 'active',
-                user_phone_is_verified: false,
-            });
-        }
-        else {
-            user.google_id = google_id;
-            // user.user_name = user_name || user.user_name;
-            // user.user_profile = user_profile || user.user_profile;
-            yield user.save();
-        }
-        const accessToken = (0, createToken_1.createToken)({ _id: user._id, user_email: user.user_email, user_phone: user_phone, role: user.role }, config_1.default.jwt_access_secret);
-        return { accessToken, user };
+    const isPasswordValid = yield (0, hashHelper_1.comparePassword)(user_password, user.user_password);
+    if (!isPasswordValid) {
+        throw new AppError_1.default(http_status_1.default.UNAUTHORIZED, "Invalid credentials");
     }
-    // Facebook login
-    // if (facebook_id && user_email) {
-    //     let user = await userModel.findOne({ facebook_id }) || await userModel.findOne({ user_email });
-    //     if (!user) {
-    //       user = await userModel.create({
-    //         user_email,
-    //         user_name,
-    //         user_profile,
-    //         facebook_id,
-    //         user_status: 'active',
-    //         user_phone_is_verified: false,
-    //       });
-    //     } else {
-    //       user.facebook_id = facebook_id;
-    //       user.user_name = user_name || user.user_name;
-    //       user.user_profile = user_profile || user.user_profile;
-    //       await user.save();
-    //     }
-    //     const accessToken = createToken(
-    //       { _id: user._id, user_email: user.user_email, role: user.role },
-    //       config.jwt_access_secret,
-    //       '7d'
-    //     );
-    //     return { accessToken, user };
-    //   }
-    throw new Error("Invalid login request");
+    // const accessToken = createToken(
+    //   {
+    //     _id: user._id,
+    //     user_email: user.user_email,
+    //     roleId: user.roleId as ObjectId | IRole | undefined,
+    //   },
+    //   config.jwt_access_secret as string
+    // );
+    const accessToken = (0, createToken_1.createToken)({
+        _id: String(user._id),
+        user_email: user.user_email,
+        roleId: user.roleId.toString(), // ✅ FIX HERE
+    }, config_1.default.jwt_access_secret);
+    return { user, accessToken };
 });
 const updateUserServices = (_id, payload) => __awaiter(void 0, void 0, void 0, function* () {
     const userData = yield user_model_1.default.findById(_id);
@@ -146,14 +115,14 @@ const forgotPasswordServices = (user_phone) => __awaiter(void 0, void 0, void 0,
     //     throw new Error("Phone number already registered");
     // }
     const otp_code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-    const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
-    if (existingUser) {
-        existingUser.otp_code = Number(otp_code);
-        existingUser.otp_expires_at = otp_expires_at;
-        (0, sendPhoneOTP_1.SendPhoneOTP)(otp_code, user_phone);
-        yield existingUser.save();
-        return existingUser;
-    }
+    // const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // OTP valid for 10 minutes
+    // if (existingUser) {
+    //   existingUser.otp_code = Number(otp_code);
+    //   existingUser.otp_expires_at = otp_expires_at;
+    //   SendPhoneOTP(otp_code, user_phone);
+    //   await existingUser.save();
+    //   return existingUser;
+    // }
     const result = yield user_model_1.default.findByIdAndUpdate({ user_phone }, {
         $set: {
             otp_code: Number(otp_code),
@@ -175,9 +144,9 @@ const resetPasswordServices = (user_phone, new_password, confirm_password) => __
     //   throw new AppError(httpStatus.BAD_REQUEST, "OTP expired");
     // }
     // Update user password and clear OTP
-    existingUser.user_password = yield (0, hashHelper_1.hashPassword)(new_password);
-    existingUser.otp_code = undefined;
-    existingUser.otp_expires_at = undefined;
+    // existingUser.user_password = await hashPassword(new_password);
+    // existingUser.otp_code = undefined;
+    // existingUser.otp_expires_at = undefined;
     yield existingUser.save();
     return existingUser;
 });
@@ -207,17 +176,6 @@ const changePasswordServices = (user, payload) => __awaiter(void 0, void 0, void
     const result = yield user_model_1.default.findOneAndUpdate({ _id: user._id }, updateData, { new: true });
     return result;
 });
-// User delete own account
-const deleteUserOwnAccountServices = (userId, delete_confirmation) => __awaiter(void 0, void 0, void 0, function* () {
-    if (delete_confirmation !== "DELETE") {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Please provide 'delete' to confirm account deletion.");
-    }
-    const user = yield user_model_1.default.findById(userId);
-    if (!user)
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
-    user.scheduledForDeletionAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-    yield user.save();
-});
 // logged in User info
 const getUserByIdServices = (user_phone_or_email) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield user_model_1.default.findOne({
@@ -229,13 +187,33 @@ const getUserByIdServices = (user_phone_or_email) => __awaiter(void 0, void 0, v
     // .select('-user_password -otp_code -otp_expires_at -scheduledForDeletionAt');
     return result;
 });
+const getAllDashboardUsersService = (searchTerm) => __awaiter(void 0, void 0, void 0, function* () {
+    let query = {};
+    if (searchTerm) {
+        const regex = new RegExp(searchTerm, "i"); // case-insensitive search
+        query = {
+            $or: [
+                { user_name: regex },
+                // { user_email: regex },
+                // { user_phone: regex },
+                // { user_city: regex },
+                // { user_country: regex },
+                // { user_current_job: regex },
+            ],
+        };
+    }
+    const result = yield user_model_1.default.find(query)
+        .sort({ createdAt: -1 }) // Sort by recent
+        .select('user_name user_phone user_email notification_id');
+    return result;
+});
 exports.UserServices = {
-    loginServices,
-    sendPhoneOtpService,
+    signupService,
+    loginService,
     updateUserServices,
     forgotPasswordServices,
     resetPasswordServices,
     changePasswordServices,
-    deleteUserOwnAccountServices,
-    getUserByIdServices
+    getUserByIdServices,
+    getAllDashboardUsersService
 };

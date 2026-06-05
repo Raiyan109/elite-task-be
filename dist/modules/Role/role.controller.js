@@ -18,7 +18,7 @@ const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const http_status_1 = __importDefault(require("http-status"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
-const postRole = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const postRole = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield role_service_1.RoleServices.postRoleService(req.body);
     return (0, sendResponse_1.default)(res, {
         success: true,
@@ -60,10 +60,10 @@ const updateRole = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         next(error);
     }
 });
-const deleteRole = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteRole = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const _id = (_a = req === null || req === void 0 ? void 0 : req.body) === null || _a === void 0 ? void 0 : _a._id;
-    const result = yield role_service_1.RoleServices.deleteRoleService(_id);
+    yield role_service_1.RoleServices.deleteRoleService(_id);
     return (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.OK,
         success: true,

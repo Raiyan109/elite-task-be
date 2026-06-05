@@ -159,7 +159,7 @@ export const auth = (...requiredRoles: string[]) => {
       }
 
       // ✅ STEP 2: get role with permissions
-      const role = await RoleModel.findById(user.roleId);
+      const role = await RoleModel.findById(user?.roleId);
 
       if (!role) {
          res.status(httpStatus.UNAUTHORIZED).json({
@@ -169,7 +169,7 @@ export const auth = (...requiredRoles: string[]) => {
       }
 
       // ❌ OPTIONAL: keep role name check (simple RBAC)
-      if (requiredRoles.length > 0 && !requiredRoles.includes(role.name)) {
+      if (requiredRoles.length > 0 && role?.name && !requiredRoles.includes(role.name)) {
          res.status(httpStatus.FORBIDDEN).json({
           success: false,
           message: "You have no access to this route",
@@ -178,9 +178,9 @@ export const auth = (...requiredRoles: string[]) => {
 
       // ✅ ATTACH FULL USER CONTEXT
       req.user = {
-        ...user.toObject(),
-        role: role.name,
-        permissions: role.permissions,
+        ...(user?.toObject() || {}),
+        role: role?.name,
+        permissions: role?.permissions,
       };
 
       next();

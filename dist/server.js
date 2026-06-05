@@ -23,7 +23,7 @@ function main() {
             // Start cron jobs after DB is connected
             (0, deleteOldUsers_1.default)(); // 👈 Start the cron job here
             app_1.default.listen(config_1.default.port, () => {
-                console.log(`Foodplus backend listening on port ${config_1.default.port}`);
+                console.log(`Elite Task backend listening on port ${config_1.default.port}`);
             });
         }
         catch (err) {

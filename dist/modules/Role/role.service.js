@@ -13,16 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoleServices = exports.deleteRoleService = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const QueryBuilder_1 = __importDefault(require("../../builder/QueryBuilder"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const role_model_1 = require("./role.model");
 const http_status_1 = __importDefault(require("http-status"));
 // Create Roles
 const postRoleService = (payload) => __awaiter(void 0, void 0, void 0, function* () {
-    const existingRoles = yield role_model_1.RoleModel.findOne({ admin_role: payload.admin_role });
-    if (existingRoles) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, 'You already added this role!');
-    }
+    // const existingRoles = await RoleModel.findOne({ admin_role: payload.admin_role });
+    // if (existingRoles) {
+    //     throw new AppError(httpStatus.BAD_REQUEST, 'You already added this role!');
+    // }
     const result = yield role_model_1.RoleModel.create(payload);
     return result;
 });
@@ -42,7 +43,7 @@ const updateRoleService = (roleId, payload) => __awaiter(void 0, void 0, void 0,
     const setFields = {};
     const unsetFields = {};
     for (const [key, value] of Object.entries(payload)) {
-        if (value === false) {
+        if (value === null || value === undefined) {
             unsetFields[key] = "";
         }
         else {

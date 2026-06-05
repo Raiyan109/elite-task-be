@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { IRole } from "../Role/role.interface";
 
 export interface IUserInterface {
+     _id?: Types.ObjectId;
     user_name: string;
     user_email: string;
     user_password: string;
