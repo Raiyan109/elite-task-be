@@ -1,4 +1,3 @@
-import { FileUploadHelper } from "../../helpers/FileUploadHelper";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { UserServices } from "./user.service";
@@ -48,13 +47,13 @@ const updateUser = catchAsync(async (req, res) => {
     let user_profile;
     let user_profile_key;
 
-    if (req.files && 'user_profile' in req.files) {
-        const userImage = req.files['user_profile'][0];
-        const user_profile_upload = await FileUploadHelper.uploadToSpaces(userImage)
+    // if (req.files && 'user_profile' in req.files) {
+    //     const userImage = req.files['user_profile'][0];
+    //     const user_profile_upload = await FileUploadHelper.uploadToSpaces(userImage)
 
-        user_profile = user_profile_upload.Location;
-        user_profile_key = user_profile_upload.Key;
-    }
+    //     user_profile = user_profile_upload.Location;
+    //     user_profile_key = user_profile_upload.Key;
+    // }
 
     const userData = {
         ...req.body,
@@ -63,9 +62,9 @@ const updateUser = catchAsync(async (req, res) => {
     };
     const result = await UserServices.updateUserServices(user_id, userData);
 
-    if (req.body?.user_profile_key) {
-        await FileUploadHelper.deleteFromSpaces(req.body.user_profile_key)
-    }
+    // if (req.body?.user_profile_key) {
+    //     await FileUploadHelper.deleteFromSpaces(req.body.user_profile_key)
+    // }
 
     sendResponse(res, {
         success: true,

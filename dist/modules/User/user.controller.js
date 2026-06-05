@@ -24,7 +24,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserControllers = void 0;
-const FileUploadHelper_1 = require("../../helpers/FileUploadHelper");
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const user_service_1 = require("./user.service");
@@ -62,24 +61,24 @@ const login = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, 
     });
 }));
 const updateUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     const user_id = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
     console.log("Update User Controller", req.body, user_id);
     // user profile image upload
     let user_profile;
     let user_profile_key;
-    if (req.files && 'user_profile' in req.files) {
-        const userImage = req.files['user_profile'][0];
-        const user_profile_upload = yield FileUploadHelper_1.FileUploadHelper.uploadToSpaces(userImage);
-        user_profile = user_profile_upload.Location;
-        user_profile_key = user_profile_upload.Key;
-    }
+    // if (req.files && 'user_profile' in req.files) {
+    //     const userImage = req.files['user_profile'][0];
+    //     const user_profile_upload = await FileUploadHelper.uploadToSpaces(userImage)
+    //     user_profile = user_profile_upload.Location;
+    //     user_profile_key = user_profile_upload.Key;
+    // }
     const userData = Object.assign(Object.assign({}, req.body), { user_profile,
         user_profile_key });
     const result = yield user_service_1.UserServices.updateUserServices(user_id, userData);
-    if ((_b = req.body) === null || _b === void 0 ? void 0 : _b.user_profile_key) {
-        yield FileUploadHelper_1.FileUploadHelper.deleteFromSpaces(req.body.user_profile_key);
-    }
+    // if (req.body?.user_profile_key) {
+    //     await FileUploadHelper.deleteFromSpaces(req.body.user_profile_key)
+    // }
     (0, sendResponse_1.default)(res, {
         success: true,
         statusCode: http_status_1.default.OK,

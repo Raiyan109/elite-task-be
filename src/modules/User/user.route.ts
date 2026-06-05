@@ -1,6 +1,5 @@
 import express from 'express';
 import { UserControllers } from './user.controller';
-import { FileUploadHelper } from '../../helpers/FileUploadHelper';
 import { auth } from '../../middlewares/auth';
 
 
@@ -12,9 +11,11 @@ router.post('/signup', UserControllers.signup);
 // router.post('/verify-otp-phone', UserControllers.verifyPhoneOtp)
 
 router.post('/login', UserControllers.login)
-router.patch('/profile', FileUploadHelper.ImageUpload.fields([
-    { name: "user_profile", maxCount: 1 },
-]), auth('user'), UserControllers.updateUser)
+router.patch('/profile', 
+//     FileUploadHelper.ImageUpload.fields([
+//     { name: "user_profile", maxCount: 1 },
+// ]), 
+auth('user'), UserControllers.updateUser)
 // router.post('/social-login', UserControllers.socialLogin)
 
 router.post('/forgot-password', UserControllers.forgotPassword);
