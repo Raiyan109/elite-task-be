@@ -28,7 +28,7 @@ const createProject: RequestHandler = async (req, res, next) => {
 
 const getAllProjects: RequestHandler = async (req, res, next) => {
     try {
-        const result = await ProjectServices.getAllProjectsService();
+        const result = await ProjectServices.getAllProjectsService(req.query);
 
         return sendResponse(res, {
             success: true,

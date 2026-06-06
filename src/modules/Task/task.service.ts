@@ -30,14 +30,113 @@ const createTaskService = async (payload: ITask): Promise<ITask> => {
     return result;
 };
 
-const getAllTasksService = async () => {
-    const result = await TaskModel.find()
+// const getAllTasksService = async () => {
+//     const result = await TaskModel.find()
+//         .populate("project_id", "project_name")
+//         .populate("user_id", "user_name user_email")
+//         .populate("assignedMembers", "user_name user_email")
+//         .sort({ createdAt: -1 });
+
+//     return result;
+// };
+
+const getAllTasksService = async (query: Record<string, any>) => {
+    const {
+        search,
+        status,
+        priority,
+        projectId,
+        assignedMember,
+        deadline,
+        sortBy,
+        sortOrder,
+        page = 1,
+        limit = 10,
+    } = query;
+
+    const filter: any = {};
+
+    // 🔍 SEARCH (title + description)
+    if (search) {
+        filter.$or = [
+            { task_title: { $regex: search, $options: "i" } },
+            { task_description: { $regex: search, $options: "i" } },
+        ];
+    }
+
+    // 📌 FILTER: status
+    if (status) {
+        filter.task_status = status;
+    }
+
+    // 📌 FILTER: priority
+    if (priority) {
+        filter.task_priority = priority;
+    }
+
+    // 📌 FILTER: project
+    if (projectId) {
+        filter.project_id = projectId;
+    }
+
+    // 👤 FILTER: assigned member
+    if (assignedMember) {
+        filter.assignedMembers = assignedMember;
+    }
+
+    // ⏰ FILTER: deadline status
+    const now = new Date();
+
+    if (deadline === "upcoming") {
+        filter.task_dueDate = { $gte: now };
+    }
+
+    if (deadline === "overdue") {
+        filter.task_dueDate = { $lt: now };
+        filter.task_status = { $ne: "completed" };
+    }
+
+    // 📊 SORTING
+    let sortCondition: any = { createdAt: -1 };
+
+    if (sortBy === "latest") {
+        sortCondition = { createdAt: -1 };
+    }
+
+    if (sortBy === "deadline") {
+        sortCondition = { task_dueDate: sortOrder === "asc" ? 1 : -1 };
+    }
+
+    if (sortBy === "priority") {
+        sortCondition = { task_priority: sortOrder === "asc" ? 1 : -1 };
+    }
+
+    if (sortBy === "updated") {
+        sortCondition = { updatedAt: -1 };
+    }
+
+    // 📄 PAGINATION
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const result = await TaskModel.find(filter)
         .populate("project_id", "project_name")
         .populate("user_id", "user_name user_email")
         .populate("assignedMembers", "user_name user_email")
-        .sort({ createdAt: -1 });
+        .sort(sortCondition)
+        .skip(skip)
+        .limit(Number(limit));
 
-    return result;
+    const total = await TaskModel.countDocuments(filter);
+
+    return {
+        data: result,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / Number(limit)),
+        },
+    };
 };
 
 const getSingleTaskService = async (id: string) => {
@@ -151,57 +250,57 @@ const getMemberWiseTasksService = async (memberId: string) => {
 };
 
 const getWorkloadSummaryService = async () => {
-  const result = await TaskModel.aggregate([
-    {
-      $unwind: "$assignedMembers",
-    },
-    {
-      $group: {
-        _id: "$assignedMembers",
-
-        totalTasks: { $sum: 1 },
-
-        completedTasks: {
-          $sum: {
-            $cond: [{ $eq: ["$task_status", "completed"] }, 1, 0],
-          },
+    const result = await TaskModel.aggregate([
+        {
+            $unwind: "$assignedMembers",
         },
+        {
+            $group: {
+                _id: "$assignedMembers",
 
-        pendingTasks: {
-          $sum: {
-            $cond: [
-              { $ne: ["$task_status", "completed"] },
-              1,
-              0,
-            ],
-          },
+                totalTasks: { $sum: 1 },
+
+                completedTasks: {
+                    $sum: {
+                        $cond: [{ $eq: ["$task_status", "completed"] }, 1, 0],
+                    },
+                },
+
+                pendingTasks: {
+                    $sum: {
+                        $cond: [
+                            { $ne: ["$task_status", "completed"] },
+                            1,
+                            0,
+                        ],
+                    },
+                },
+            },
         },
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "_id",
-        foreignField: "_id",
-        as: "member",
-      },
-    },
-    {
-      $unwind: "$member",
-    },
-    {
-      $project: {
-        memberId: "$_id",
-        memberName: "$member.user_name",
-        memberEmail: "$member.user_email",
-        totalTasks: 1,
-        completedTasks: 1,
-        pendingTasks: 1,
-      },
-    },
-  ]);
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "_id",
+                as: "member",
+            },
+        },
+        {
+            $unwind: "$member",
+        },
+        {
+            $project: {
+                memberId: "$_id",
+                memberName: "$member.user_name",
+                memberEmail: "$member.user_email",
+                totalTasks: 1,
+                completedTasks: 1,
+                pendingTasks: 1,
+            },
+        },
+    ]);
 
-  return result;
+    return result;
 };
 
 export const TaskServices = {

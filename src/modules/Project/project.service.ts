@@ -9,13 +9,48 @@ const createProjectService = async (payload: IProject): Promise<IProject> => {
     return result;
 };
 
-const getAllProjectsService = async () => {
-    const result = await ProjectModel.find()
+// const getAllProjectsService = async () => {
+//     const result = await ProjectModel.find()
+//         .populate("user_id", "user_name user_email")
+//         .populate("members", "user_name user_email")
+//         .sort({ createdAt: -1 });
+
+//     return result;
+// };
+
+const getAllProjectsService = async (query: Record<string, any>) => {
+    const { search, status, page = 1, limit = 10 } = query;
+
+    const filter: any = {};
+
+    if (search) {
+        filter.project_name = { $regex: search, $options: "i" };
+    }
+
+    if (status) {
+        filter.project_status = status;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const result = await ProjectModel.find(filter)
         .populate("user_id", "user_name user_email")
         .populate("members", "user_name user_email")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
 
-    return result;
+    const total = await ProjectModel.countDocuments(filter);
+
+    return {
+        data: result,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / Number(limit)),
+        },
+    };
 };
 
 const getSingleProjectService = async (id: string) => {

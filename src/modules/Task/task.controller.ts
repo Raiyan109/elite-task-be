@@ -25,9 +25,24 @@ const createTask: RequestHandler = async (req, res, next) => {
     }
 };
 
+// const getAllTasks: RequestHandler = async (req, res, next) => {
+//     try {
+//         const result = await TaskServices.getAllTasksService();
+
+//         return sendResponse(res, {
+//             success: true,
+//             statusCode: httpStatus.OK,
+//             message: "Tasks retrieved successfully",
+//             data: result,
+//         });
+//     } catch (error) {
+//         next(error);
+//     }
+// };
+
 const getAllTasks: RequestHandler = async (req, res, next) => {
     try {
-        const result = await TaskServices.getAllTasksService();
+        const result = await TaskServices.getAllTasksService(req.query);
 
         return sendResponse(res, {
             success: true,
@@ -92,56 +107,56 @@ const deleteTask: RequestHandler = async (req, res, next) => {
 };
 
 const assignTaskToMembers: RequestHandler = async (req, res, next) => {
-  try {
-    const { taskId } = req.params;
-    const { members } = req.body;
+    try {
+        const { taskId } = req.params;
+        const { members } = req.body;
 
-    const result = await TaskServices.assignTaskToMembersService(
-      taskId,
-      members
-    );
+        const result = await TaskServices.assignTaskToMembersService(
+            taskId,
+            members
+        );
 
-    return sendResponse(res, {
-      success: true,
-      statusCode: httpStatus.OK,
-      message: "Task assigned successfully",
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
+        return sendResponse(res, {
+            success: true,
+            statusCode: httpStatus.OK,
+            message: "Task assigned successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 const getMemberWiseTasks: RequestHandler = async (req, res, next) => {
-  try {
-    const { memberId } = req.params;
+    try {
+        const { memberId } = req.params;
 
-    const result = await TaskServices.getMemberWiseTasksService(memberId);
+        const result = await TaskServices.getMemberWiseTasksService(memberId);
 
-    return sendResponse(res, {
-      success: true,
-      statusCode: httpStatus.OK,
-      message: "Member tasks retrieved successfully",
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
+        return sendResponse(res, {
+            success: true,
+            statusCode: httpStatus.OK,
+            message: "Member tasks retrieved successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 const getWorkloadSummary: RequestHandler = async (req, res, next) => {
-  try {
-    const result = await TaskServices.getWorkloadSummaryService();
+    try {
+        const result = await TaskServices.getWorkloadSummaryService();
 
-    return sendResponse(res, {
-      success: true,
-      statusCode: httpStatus.OK,
-      message: "Workload summary fetched successfully",
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
+        return sendResponse(res, {
+            success: true,
+            statusCode: httpStatus.OK,
+            message: "Workload summary fetched successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const TaskControllers = {
