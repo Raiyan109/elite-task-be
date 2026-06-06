@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import AppError from "../../errors/AppError";
 import { ITask } from "./task.interface";
 import httpStatus from "http-status";
@@ -114,10 +115,102 @@ const deleteTaskService = async (id: string) => {
     return result;
 };
 
+const assignTaskToMembersService = async (
+    taskId: string,
+    memberIds: string[]
+) => {
+    const task = await TaskModel.findById(taskId);
+
+    if (!task) {
+        throw new AppError(httpStatus.NOT_FOUND, "Task not found");
+    }
+
+    // ❌ rule: completed task cannot be modified
+    if (task.task_status === "completed") {
+        throw new AppError(
+            httpStatus.BAD_REQUEST,
+            "Completed tasks cannot be reassigned."
+        );
+    }
+
+    task.assignedMembers = memberIds as any;
+
+    await task.save();
+
+    return task;
+};
+
+const getMemberWiseTasksService = async (memberId: string) => {
+    const tasks = await TaskModel.find({
+        assignedMembers: memberId,
+    })
+        .populate("project_id", "project_name")
+        .sort({ createdAt: -1 });
+
+    return tasks;
+};
+
+const getWorkloadSummaryService = async () => {
+  const result = await TaskModel.aggregate([
+    {
+      $unwind: "$assignedMembers",
+    },
+    {
+      $group: {
+        _id: "$assignedMembers",
+
+        totalTasks: { $sum: 1 },
+
+        completedTasks: {
+          $sum: {
+            $cond: [{ $eq: ["$task_status", "completed"] }, 1, 0],
+          },
+        },
+
+        pendingTasks: {
+          $sum: {
+            $cond: [
+              { $ne: ["$task_status", "completed"] },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "member",
+      },
+    },
+    {
+      $unwind: "$member",
+    },
+    {
+      $project: {
+        memberId: "$_id",
+        memberName: "$member.user_name",
+        memberEmail: "$member.user_email",
+        totalTasks: 1,
+        completedTasks: 1,
+        pendingTasks: 1,
+      },
+    },
+  ]);
+
+  return result;
+};
+
 export const TaskServices = {
     createTaskService,
     getAllTasksService,
     getSingleTaskService,
     updateTaskService,
     deleteTaskService,
+    assignTaskToMembersService,
+    getMemberWiseTasksService,
+    getWorkloadSummaryService,
 };

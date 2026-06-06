@@ -3,6 +3,7 @@ import { UserRoutes } from '../modules/User/user.route';
 import { RoleRoutes } from '../modules/Role/role.route';
 import { ProjectRoutes } from '../modules/Project/project.route';
 import { TaskRoutes } from '../modules/Task/task.route';
+import { ProgressTrackingRoutes } from '../modules/ProgressTracking/progressTracking.route';
 
 const router = Router();
 
@@ -22,6 +23,10 @@ const moduleRoutes = [
     {
         path: '/task',
         route: TaskRoutes,
+    },
+    {
+        path: '/progress',
+        route: ProgressTrackingRoutes,
     },
 ];
 
