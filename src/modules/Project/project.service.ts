@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import AppError from "../../errors/AppError";
 import { IProject } from "./project.interface";
 import { ProjectModel } from "./project.model";
+import httpStatus from "http-status";
 
 const createProjectService = async (payload: IProject): Promise<IProject> => {
     const result = await ProjectModel.create(payload);
@@ -53,10 +56,40 @@ const deleteProjectService = async (id: string) => {
     return result;
 };
 
+const addMembersToProjectService = async (
+    projectId: string,
+    memberIds: string[]
+) => {
+    const project = await ProjectModel.findById(projectId);
+
+    if (!project) {
+        throw new AppError(httpStatus.NOT_FOUND, "Project not found");
+    }
+
+    // avoid duplicates
+    const existingMemberIds = Array.isArray(project.members)
+        ? project.members.map((m) => m.toString())
+        : [];
+
+    const updatedMembers = Array.from(
+        new Set([
+            ...existingMemberIds,
+            ...memberIds,
+        ])
+    );
+
+    project.members = updatedMembers as any;
+
+    await project.save();
+
+    return project;
+};
+
 export const ProjectServices = {
     createProjectService,
     getAllProjectsService,
     getSingleProjectService,
     updateProjectService,
     deleteProjectService,
+    addMembersToProjectService,
 };

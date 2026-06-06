@@ -92,10 +92,32 @@ const deleteProject: RequestHandler = async (req, res, next) => {
     }
 };
 
+const addMembersToProject: RequestHandler = async (req, res, next) => {
+    try {
+        const { projectId } = req.params;
+        const { members } = req.body;
+
+        const result = await ProjectServices.addMembersToProjectService(
+            projectId,
+            members
+        );
+
+        return sendResponse(res, {
+            success: true,
+            statusCode: httpStatus.OK,
+            message: "Members added to project successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const ProjectControllers = {
     createProject,
     getAllProjects,
     getSingleProject,
     updateProject,
     deleteProject,
+    addMembersToProject,
 };

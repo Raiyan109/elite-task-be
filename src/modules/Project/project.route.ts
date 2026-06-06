@@ -15,4 +15,8 @@ router
     .patch(auth("admin", "project_manager"), ProjectControllers.updateProject)
     .delete(auth("admin", "project_manager"), ProjectControllers.deleteProject);
 
+router
+    .route("/add-members/:projectId")
+    .post(auth("admin", "project_manager"), ProjectControllers.addMembersToProject);
+
 export const ProjectRoutes = router;
